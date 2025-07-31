@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: frontend
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-08-01T04:00:00Z"  
     spec:
       containers:
         - name: frontend
