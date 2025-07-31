@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: jayyp2op/frontend:latest
+          image: jayyp2op/3-tier-frontend:latest
           ports:
             - containerPort: 80
 ---
