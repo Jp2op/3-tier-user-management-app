@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: jayyp2op/3-tier-frontend:latest
+          image: jayyp2op/3-tier-backend:latest
           ports:
             - containerPort: 5000
           env:
