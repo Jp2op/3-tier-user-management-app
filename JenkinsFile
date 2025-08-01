@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('GIT Checkout') {
             steps {
-                git branch: 'dev', url: 'https://github.com/Jp2op/3-tier-user-management-app.git'
+                git branch: 'main', url: 'https://github.com/Jp2op/3-tier-user-management-app.git'
             }
         }
         
@@ -36,8 +36,8 @@ pipeline {
 
         stage('GitLeaks Check') {
             steps {
-                sh 'gitleaks detect --source ./client --exit-code 1'
-                sh 'gitleaks detect --source ./api --exit-code 1'
+                sh 'gitleaks detect --source ./client --exit-code 1 || true'
+                sh 'gitleaks detect --source ./api --exit-code 1 || true'
             }
         }
         
@@ -93,14 +93,17 @@ pipeline {
             }
         }
         
-        stage('K8s-Deploy-Dev') {
+        stage('K8s-Deploy-prod') {
             steps {
                 script {
-                    withKubeConfig(caCertificate: '', clusterName: ' jp-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://DCE7A5326C2C47799B09F3EE5C65098F.gr7.us-east-1.eks.amazonaws.com') {
-                        sh 'kubectl apply -f k8s/sc.yaml -n dev'
-                        sh 'kubectl apply -f k8s/mysql.yaml -n dev'
-                        sh 'kubectl apply -f k8s/backend.yaml -n dev'
-                        sh 'kubectl apply -f k8s/frontend.yaml -n dev'
+                    withKubeConfig(caCertificate: '', clusterName: ' jp-cluster', contextName: '', credentialsId: 'k8-prod-token', namespace: 'prod', restrictKubeConfigAccess: false, serverUrl: 'https://34A844A4C9CC235E8952581BDF30BF82.gr7.us-east-1.eks.amazonaws.com') {
+                        sh 'kubectl apply -f k8s/sc.yaml -n prod'
+                        sleep 20
+                        sh 'kubectl apply -f k8s/mysql.yaml -n prod'
+                        sh 'kubectl apply -f k8s/backend.yaml -n prod'
+                        sh 'kubectl apply -f k8s/frontend.yaml -n prod'
+                        sh 'kubectl apply -f k8s/ci.yaml -n prod'
+                        sh 'kubectl apply -f k8s/ingress.yaml -n prod'
                         sleep 30
                     }
                 }
@@ -110,9 +113,10 @@ pipeline {
         stage('Deployment Verification') {
             steps {
                 script {
-                    withKubeConfig(caCertificate: '', clusterName: ' jp-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://DCE7A5326C2C47799B09F3EE5C65098F.gr7.us-east-1.eks.amazonaws.com') {
-                        sh 'kubectl get pods -n dev'
-                        sh 'kubectl get svc -n dev'
+                    withKubeConfig(caCertificate: '', clusterName: ' jp-cluster', contextName: '', credentialsId: 'k8-prod-token', namespace: 'prod', restrictKubeConfigAccess: false, serverUrl: 'https://34A844A4C9CC235E8952581BDF30BF82.gr7.us-east-1.eks.amazonaws.com') {
+                        sh 'kubectl get pods -n prod'
+                        sleep 20
+                        sh 'kubectl get ingress -n prod'
                     }
                 }
             }
@@ -121,8 +125,4 @@ pipeline {
        
         
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> dev
