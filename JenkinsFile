@@ -64,5 +64,61 @@ pipeline {
                 sh 'trivy fs --format table -o fs-report.html .'
             }
         }
+        
+        stage('Build, Tag & Push Backend Docker images') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred') {
+                        dir('api') {
+                            sh 'docker build -t jayyp2op/3-tier-backend:latest .'
+                            sh 'trivy image --format table -o backend-image-report.html jayyp2op/3-tier-backend:latest'
+                            sh 'docker push jayyp2op/3-tier-backend:latest'
+                        }   
+                    }
+                }
+            }
+        }
+        
+        stage('Build, Tag & Push Frontend Docker images') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred') {
+                        dir('client') {
+                            sh 'docker build -t jayyp2op/3-tier-frontend:latest .'
+                            sh 'trivy image --format table -o frontend-image-report.html jayyp2op/3-tier-frontend:latest'
+                            sh 'docker push jayyp2op/3-tier-frontend:latest'
+                        }   
+                    }
+                }
+            }
+        }
+        
+        stage('K8s-Deploy-Dev') {
+            steps {
+                script {
+                    withKubeConfig(caCertificate: '', clusterName: ' jp-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://DCE7A5326C2C47799B09F3EE5C65098F.gr7.us-east-1.eks.amazonaws.com') {
+                        sh 'kubectl apply -f k8s/sc.yaml -n dev'
+                        sh 'kubectl apply -f k8s/mysql.yaml -n dev'
+                        sh 'kubectl apply -f k8s/backend.yaml -n dev'
+                        sh 'kubectl apply -f k8s/frontend.yaml -n dev'
+                        sleep 30
+                    }
+                }
+            }
+        }
+        
+        stage('Deployment Verification') {
+            steps {
+                script {
+                    withKubeConfig(caCertificate: '', clusterName: ' jp-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://DCE7A5326C2C47799B09F3EE5C65098F.gr7.us-east-1.eks.amazonaws.com') {
+                        sh 'kubectl get pods -n dev'
+                        sh 'kubectl get svc -n dev'
+                    }
+                }
+            }
+        }
+       
+       
+        
     }
 }
